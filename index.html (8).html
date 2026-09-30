@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cal-Can Hazard Assessment">
+<title>Cal-Can Job Site Hazard Assessment</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --blue: #0D47A1; --blue-mid: #1565C0; --blue-light: #E3F2FD; --blue-dark: #0a3575;
+    --red: #C62828; --red-light: #FFEBEE;
+    --green: #2E7D32; --green-light: #E8F5E9;
+    --yellow: #F9A825; --yellow-light: #FFFDE7;
+    --black: #111; --black-mid: #1E1E1E;
+    --gray-dark: #444; --gray-mid: #888; --gray-light: #E4E4E4; --gray-bg: #F2F2F2;
+    --white: #FFF;
+    --radius: 14px; --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--gray-bg); color: var(--black); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+  /* HEADER */
+  .brand-header { background: var(--blue); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.35); }
+  .brand-top { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; }
+  .brand-wordmark { display: flex; flex-direction: column; }
+  .brand-name { color: #fff; font-size: 17px; font-weight: 900; letter-spacing: 0.5px; line-height: 1.1; }
+  .brand-name span { color: #90CAF9; }
+  .brand-tag { color: #90CAF9; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+  .brand-badge { background: #fff; color: var(--blue); font-size: 11px; font-weight: 900; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
+  .brand-sub { color: rgba(255,255,255,0.45); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; padding: 0 16px 8px; }
+  .progress-track { display: flex; align-items: center; padding: 0 16px 12px; }
+  .progress-seg { height: 3px; flex: 1; background: rgba(255,255,255,0.15); transition: background 0.35s; }
+  .progress-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); flex-shrink: 0; transition: background 0.35s, transform 0.2s; }
+  .progress-dot.active { background: #fff; transform: scale(1.4); }
+  .progress-dot.done { background: #90CAF9; }
+  .progress-seg.active { background: rgba(255,255,255,0.6); }
+  .progress-seg.done { background: #90CAF9; }
+  .brand-accent { height: 3px; background: linear-gradient(90deg, #90CAF9, #fff 100%); }
+
+  /* SCREENS */
+  .screen { display: none; padding: 16px; max-width: 520px; margin: 0 auto; padding-bottom: 40px; }
+  .screen.active { display: block; }
+  .page-title { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 3px; }
+  .page-sub { font-size: 13px; color: var(--gray-mid); margin-bottom: 18px; line-height: 1.4; }
+
+  /* CARDS */
+  .card { background: var(--white); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,0.04); }
+  .card-title { font-size: 10px; font-weight: 900; letter-spacing: 1.6px; text-transform: uppercase; color: var(--blue-mid); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; display: block; width: 3px; height: 14px; background: var(--blue-mid); border-radius: 2px; flex-shrink: 0; }
+
+  /* FIELDS */
+  .field { margin-bottom: 13px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 10px; font-weight: 800; color: var(--gray-mid); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .field input, .field select, .field textarea { width: 100%; border: 1.5px solid var(--gray-light); border-radius: 10px; padding: 13px 14px; font-size: 16px; color: var(--black); background: #fafafa; outline: none; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; -webkit-appearance: none; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue-mid); background: var(--white); box-shadow: 0 0 0 3px rgba(21,101,192,0.12); }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* WORK TYPE CHIPS */
+  .work-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+  .work-chip { border: 1.5px solid var(--gray-light); border-radius: 10px; padding: 11px; background: white; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gray-dark); text-align: center; transition: all 0.15s; font-family: inherit; width: 100%; }
+  .work-chip .chip-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+  .work-chip.selected { background: var(--blue-light); border-color: var(--blue-mid); color: var(--blue-mid); font-weight: 800; }
+
+  /* HAZARD CHECK ITEMS */
+  .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--gray-light); }
+  .check-item:last-child { border-bottom: none; }
+  .check-item-icon { font-size: 19px; width: 26px; text-align: center; flex-shrink: 0; padding-top: 2px; }
+  .check-item-name { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .check-item-sub { font-size: 11px; color: var(--gray-mid); margin-top: 2px; }
+  .check-btns { display: flex; gap: 5px; flex-shrink: 0; }
+  .check-btn { width: 44px; height: 36px; border: 1.5px solid var(--gray-light); border-radius: 8px; background: white; font-size: 12px; font-weight: 900; cursor: pointer; transition: all 0.15s; color: var(--gray-mid); display: flex; align-items: center; justify-content: center; font-family: inherit; }
+  .check-btn.yes.active { background: var(--red); border-color: var(--red); color: white; }
+  .check-btn.no.active { background: var(--green); border-color: var(--green); color: white; }
+  .check-btn.na.active { background: #888; border-color: #888; color: white; }
+  .control-wrap { padding: 0 0 10px 8px; }
+  .control-input { width: 100%; border: 1.5px solid #ffcdd2; border-radius: 8px; padding: 9px 12px; font-size: 14px; outline: none; font-family: inherit; background: var(--red-light); color: var(--black); }
+  .control-input:focus { border-color: var(--red); background: white; }
+
+  /* STATUS BANNERS */
+  .status-banner { border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 800; }
+  .status-banner.hazard { background: var(--red-light); color: var(--red); border: 1.5px solid #ef9a9a; }
+  .status-banner.clear { background: var(--green-light); color: var(--green); border: 1.5px solid #a5d6a7; }
+  .status-banner.pending { background: var(--blue-light); color: var(--blue-mid); border: 1.5px solid #90CAF9; }
+
+  /* SIGNATURES */
+  .sig-canvas-wrap { border: 1.5px solid var(--gray-light); border-radius: 10px; background: white; position: relative; overflow: hidden; }
+  .sig-canvas-wrap canvas { display: block; width: 100%; height: 70px; touch-action: none; }
+  .clear-sig { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.07); border: none; border-radius: 6px; padding: 3px 9px; font-size: 11px; cursor: pointer; color: var(--gray-dark); font-family: inherit; font-weight: 600; }
+  .sig-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #ccc; font-size: 13px; pointer-events: none; white-space: nowrap; }
+  .section-note { font-size: 12px; color: var(--gray-mid); margin-bottom: 12px; line-height: 1.5; }
+
+  /* CREW MEMBER ROW */
+  .crew-row { background: #f8faff; border: 1.5px solid var(--blue-light); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .crew-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .crew-label { font-size: 12px; font-weight: 800; color: var(--blue-mid); text-transform: uppercase; letter-spacing: 0.8px; }
+  .remove-crew { background: none; border: none; color: var(--gray-mid); font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .add-crew-btn { width: 100%; padding: 12px; background: var(--blue-light); color: var(--blue-mid); border: 1.5px dashed var(--blue-mid); border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 4px; }
+
+  /* BUTTONS */
+  .btn-primary { width: 100%; padding: 17px; background: var(--blue-mid); color: white; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 900; cursor: pointer; font-family: inherit; margin-top: 6px; box-shadow: 0 4px 14px rgba(21,101,192,0.3); transition: transform 0.1s; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-outline { width: 100%; padding: 14px; background: transparent; color: var(--gray-dark); border: 1.5px solid var(--gray-light); border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; font-family: inherit; }
+  .btn-success { width: 100%; padding: 17px; background: linear-gradient(135deg, #2E7D32, #43a047); color: white; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 900; cursor: pointer; font-family: inherit; margin-top: 6px; box-shadow: 0 4px 14px rgba(46,125,50,0.3); }
+
+  /* SUMMARY */
+  .summary-stat { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--gray-light); font-size: 13px; gap: 8px; }
+  .summary-stat:last-child { border-bottom: none; }
+  .summary-stat .label { color: var(--gray-mid); }
+  .badge-red { background: var(--red-light); color: var(--red); padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 12px; }
+  .badge-green { background: var(--green-light); color: var(--green); padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 12px; }
+  .badge-gray { background: #f0f0f0; color: #666; padding: 2px 10px; border-radius: 20px; font-weight: 800; font-size: 12px; }
+
+  /* SENDING */
+  .sending-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .sending-overlay.active { display: flex; }
+  .sending-card { background: var(--black-mid); border-radius: 20px; padding: 32px 40px; text-align: center; border: 1px solid #333; }
+  .sending-wordmark { color: #fff; font-size: 18px; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 20px; }
+  .sending-wordmark span { color: #90CAF9; }
+  .sending-spinner { width: 44px; height: 44px; border: 3px solid rgba(144,202,249,0.2); border-top-color: #90CAF9; border-radius: 50%; animation: spin 0.75s linear infinite; margin: 0 auto 14px; }
+  .sending-text { color: white; font-size: 15px; font-weight: 700; }
+  .sending-sub { color: #555; font-size: 12px; margin-top: 4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* DONE */
+  .done-wrap { text-align: center; padding: 24px 0; }
+  .done-hero { background: var(--blue); border-radius: var(--radius); padding: 28px 20px 24px; margin-bottom: 16px; border: 2px solid #90CAF9; }
+  .done-hero-name { color: #fff; font-size: 18px; font-weight: 900; margin-bottom: 16px; }
+  .done-hero-name span { color: #90CAF9; }
+  .done-icon { font-size: 52px; margin-bottom: 10px; }
+  .done-title { color: #fff; font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+  .done-sub { color: rgba(255,255,255,0.6); font-size: 14px; line-height: 1.6; }
+  .email-status { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-radius: 12px; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .email-status.success { background: var(--green-light); color: var(--green); border: 1px solid #a5d6a7; }
+  .email-status.error { background: var(--red-light); color: var(--red); border: 1px solid #ef9a9a; }
+</style>
+</head>
+<body>
+
+<div class="sending-overlay" id="sendingOverlay">
+  <div class="sending-card">
+    <div class="sending-wordmark">Cal-Can <span>Plumbing & Heating</span></div>
+    <div class="sending-spinner"></div>
+    <div class="sending-text">Sending hazard assessment...</div>
+    <div class="sending-sub">info@cal-canplumbing.com</div>
+  </div>
+</div>
+
+<div class="brand-header">
+  <div class="brand-top">
+    <div class="brand-wordmark">
+      <div class="brand-name">Cal-Can <span>Plumbing & Heating</span></div>
+      <div class="brand-tag">Cal-Can Plumbing & Heating Ltd.</div>
+    </div>
+    <div class="brand-badge" id="stepLabel">Step 1 of 4</div>
+  </div>
+  <div class="brand-sub">📋 Job Site Hazard Assessment</div>
+  <div class="progress-track">
+    <div class="progress-dot active" id="pd1"></div>
+    <div class="progress-seg" id="ps1"></div>
+    <div class="progress-dot" id="pd2"></div>
+    <div class="progress-seg" id="ps2"></div>
+    <div class="progress-dot" id="pd3"></div>
+    <div class="progress-seg" id="ps3"></div>
+    <div class="progress-dot" id="pd4"></div>
+  </div>
+  <div class="brand-accent"></div>
+</div>
+
+<!-- SCREEN 1: JOB INFO -->
+<div class="screen active" id="screen1">
+  <div class="page-title">Job Info</div>
+  <div class="page-sub">Enter the project and site details before starting work.</div>
+
+  <div class="card">
+    <div class="card-title">Work Type</div>
+    <div class="work-type-grid" id="workTypeGrid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Project Details</div>
+    <div class="field"><label>Job / Work Order #</label><input type="text" id="jobNumber" placeholder="e.g. CC-2026-084"></div>
+    <div class="field"><label>Client / Customer Name</label><input type="text" id="clientName" placeholder="e.g. Smith Residence"></div>
+    <div class="field"><label>Site Address</label><input type="text" id="siteAddress" placeholder="Street address"></div>
+    <div class="field-row">
+      <div class="field"><label>City</label><input type="text" id="siteCity" placeholder="e.g. Calgary"></div>
+      <div class="field"><label>Date</label><input type="date" id="jobDate"></div>
+    </div>
+    <div class="field"><label>Scope of Work</label><textarea id="scopeWork" placeholder="Briefly describe the work being performed today..."></textarea></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Supervisor / Foreman</div>
+    <div class="field"><label>Name</label><input type="text" id="supervisorName" placeholder="Full name"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="supervisorPhone" placeholder="(403) 000-0000"></div>
+  </div>
+
+  <button class="btn-primary" onclick="goTo(2)">Next: Hazard Check →</button>
+</div>
+
+<!-- SCREEN 2: HAZARD CHECK -->
+<div class="screen" id="screen2">
+  <div class="page-title">Hazard Check</div>
+  <div class="page-sub">Mark YES if the hazard is present. Describe control measures for every YES.</div>
+  <div id="hazardStatus" style="margin-bottom:12px;"></div>
+  <div id="hazardContainer"></div>
+
+  <div class="card">
+    <div class="card-title">Additional Notes</div>
+    <div class="field">
+      <textarea id="hazardNotes" placeholder="Any site-specific hazards or conditions not listed above..."></textarea>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="goTo(3)">Next: Crew Sign-Off →</button>
+  <button class="btn-outline" onclick="goTo(1)">← Back</button>
+</div>
+
+<!-- SCREEN 3: CREW SIGN-OFF -->
+<div class="screen" id="screen3">
+  <div class="page-title">Crew Sign-Off</div>
+  <div class="page-sub">All crew members confirm they have reviewed the hazard assessment.</div>
+
+  <div class="card">
+    <div class="card-title">Crew Members</div>
+    <p class="section-note">Each person on site must print their name and sign.</p>
+    <div id="crewList"></div>
+    <button class="add-crew-btn" onclick="addCrewMember()">+ Add Crew Member</button>
+  </div>
+
+  <button class="btn-primary" onclick="goTo(4)">Next: Review & Submit →</button>
+  <button class="btn-outline" onclick="goTo(2)">← Back</button>
+</div>
+
+<!-- SCREEN 4: REVIEW & SUBMIT -->
+<div class="screen" id="screen4">
+  <div class="page-title">Review & Submit</div>
+  <div class="page-sub">Confirm all details, then supervisor signs and submits.</div>
+
+  <div id="reviewSummary"></div>
+
+  <div class="card">
+    <div class="card-title">Supervisor Sign-Off</div>
+    <p class="section-note">I confirm this hazard assessment is complete and control measures are in place.</p>
+    <div class="field"><label>Supervisor Name</label><input type="text" id="signSupervisor" placeholder="Print full name"></div>
+    <div class="field">
+      <label>Signature</label>
+      <div class="sig-canvas-wrap">
+        <canvas id="supervisorCanvas" height="70"></canvas>
+        <div class="sig-placeholder" id="ph-supervisorCanvas">Sign here</div>
+        <button class="clear-sig" onclick="clearCanvas('supervisorCanvas','ph-supervisorCanvas')">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-success" id="submitBtn" onclick="submitForm()">✓ Submit Hazard Assessment</button>
+  <button class="btn-outline" onclick="goTo(3)">← Back</button>
+</div>
+
+<!-- SCREEN 5: DONE -->
+<div class="screen" id="screen5">
+  <div class="done-wrap">
+    <div class="done-hero">
+      <div class="done-hero-name">Cal-Can <span>Plumbing & Heating</span></div>
+      <div class="done-icon">✅</div>
+      <div class="done-title">Assessment Submitted</div>
+      <div class="done-sub" id="doneSub">Hazard assessment emailed to the office.</div>
+    </div>
+    <div id="emailStatusMsg" style="margin-top:12px;"></div>
+    <div class="card" style="text-align:left;margin-bottom:16px;">
+      <div class="card-title">Confirmation</div>
+      <div id="confirmDetails"></div>
+    </div>
+    <button class="btn-primary" onclick="startNew()">Start New Assessment</button>
+    <button class="btn-outline" onclick="window.print()">🖨️ Print / Save PDF</button>
+  </div>
+</div>
+
+<script>
+  emailjs.init('b2h_fLAzlI7hw6cmA');
+
+  const WORK_TYPES = [
+    {icon:'🔧', name:'Plumbing Repair'},
+    {icon:'🏠', name:'Residential Install'},
+    {icon:'🏢', name:'Commercial Install'},
+    {icon:'🔥', name:'Furnace / Boiler'},
+    {icon:'🚿', name:'Drain / Sewer'},
+    {icon:'💧', name:'Water Service'},
+    {icon:'🌡️', name:'HVAC / Heating'},
+    {icon:'⚙️', name:'Other'},
+  ];
+
+  const HAZARDS = [
+    {
+      group: 'Gas & Combustion',
+      items: [
+        {icon:'🔥', name:'Natural Gas Lines / Fittings', sub:'Existing gas lines, meter connections, appliance hook-ups'},
+        {icon:'💨', name:'Carbon Monoxide Risk', sub:'Inadequate ventilation, combustion appliance testing'},
+        {icon:'🌡️', name:'Hot Work / Soldering', sub:'Open flame, torch use, soldering copper or fittings'},
+        {icon:'💥', name:'Explosive / Flammable Atmosphere', sub:'Gas leak potential, confined space with vapours'},
+      ]
+    },
+    {
+      group: 'Water & Pressure',
+      items: [
+        {icon:'💧', name:'Pressurized Water Lines', sub:'Live water under pressure, potential for sudden release'},
+        {icon:'♨️', name:'Hot Water / Steam', sub:'Scalding risk from hot water lines, boilers, or steam systems'},
+        {icon:'🚿', name:'Sewage / Drain Exposure', sub:'Contact with raw sewage, grey water, or drain contents'},
+        {icon:'🧪', name:'Chemical Drain Cleaners', sub:'Caustic chemicals, splashing risk to eyes and skin'},
+      ]
+    },
+    {
+      group: 'Electrical & Mechanical',
+      items: [
+        {icon:'⚡', name:'Electrical Hazards', sub:'Proximity to live panels, wiring near water, lock-out required'},
+        {icon:'🔩', name:'Rotating Equipment', sub:'Pumps, motors, fans — pinch points and entanglement risk'},
+        {icon:'🧲', name:'HVAC / Mechanical Equipment', sub:'Moving parts, pressurized refrigerant, sharp sheet metal'},
+      ]
+    },
+    {
+      group: 'Work Environment',
+      items: [
+        {icon:'🏠', name:'Confined Space / Crawl Space', sub:'Restricted access, limited egress, poor ventilation'},
+        {icon:'🪜', name:'Working at Heights / Ladders', sub:'Ladder use, attic access, rooftop mechanical units'},
+        {icon:'🏗️', name:'Overhead Work / Dropped Tools', sub:'Working above head height, tools or materials falling'},
+        {icon:'🧱', name:'Asbestos / Hazardous Materials', sub:'Older insulation, pipe wrap, floor tiles in pre-1990 buildings'},
+        {icon:'❄️', name:'Extreme Temperatures', sub:'Working in unheated spaces, outdoor work in cold weather'},
+        {icon:'🐕', name:'Pets / Occupants on Site', sub:'Animals, children, or unsecured occupants in work area'},
+      ]
+    },
+    {
+      group: 'Ergonomic & Physical',
+      items: [
+        {icon:'💪', name:'Heavy Lifting / Manual Handling', sub:'Water heaters, furnaces, pipe sections over 20 kg'},
+        {icon:'🦵', name:'Awkward Postures / Tight Spaces', sub:'Crawling, kneeling, working in restricted positions'},
+        {icon:'🔨', name:'Hand Tools / Power Tools', sub:'Cut, puncture, or crush injuries from tools'},
+        {icon:'🌀', name:'Slips, Trips & Falls', sub:'Wet floors, hoses across walkways, cluttered work areas'},
+      ]
+    },
+  ];
+
+  let hazardState = {};
+  let controlNotes = {};
+  let canvases = {};
+  let crewMembers = [];
+  let selectedWorkType = '';
+
+  window.onload = () => {
+    const now = new Date();
+    document.getElementById('jobDate').value = now.toISOString().split('T')[0];
+    buildWorkTypes();
+    buildHazardList();
+    addCrewMember();
+    setTimeout(() => initCanvas('supervisorCanvas'), 100);
+  };
+
+  function buildWorkTypes() {
+    const g = document.getElementById('workTypeGrid');
+    WORK_TYPES.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'work-chip';
+      btn.innerHTML = `<span class="chip-icon">${t.icon}</span>${t.name}`;
+      btn.onclick = () => {
+        document.querySelectorAll('.work-chip').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedWorkType = t.name;
+      };
+      g.appendChild(btn);
+    });
+  }
+
+  function buildHazardList() {
+    const container = document.getElementById('hazardContainer');
+    HAZARDS.forEach((group, gi) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      let html = `<div class="card-title">${group.group}</div>`;
+      group.items.forEach((item, ii) => {
+        const key = `${gi}-${ii}`;
+        hazardState[key] = null;
+        html += `
+          <div class="check-item" id="ci-${key}">
+            <div class="check-item-icon">${item.icon}</div>
+            <div style="flex:1;">
+              <div class="check-item-name">${item.name}</div>
+              <div class="check-item-sub">${item.sub}</div>
+            </div>
+            <div class="check-btns">
+              <button class="check-btn yes" id="yes-${key}" onclick="setHazard('${key}','yes')">YES</button>
+              <button class="check-btn no" id="no-${key}" onclick="setHazard('${key}','no')">NO</button>
+              <button class="check-btn na" id="na-${key}" onclick="setHazard('${key}','na')">N/A</button>
+            </div>
+          </div>
+          <div class="control-wrap" id="ctrl-${key}" style="display:none;">
+            <input class="control-input" type="text" placeholder="Describe control measures..."
+              oninput="controlNotes['${key}']=this.value">
+          </div>`;
+      });
+      card.innerHTML = html;
+      container.appendChild(card);
+    });
+  }
+
+  function setHazard(key, val) {
+    hazardState[key] = val;
+    ['yes','no','na'].forEach(v => {
+      const btn = document.getElementById(`${v}-${key}`);
+      if (btn) btn.className = `check-btn ${v}${val===v?' active':''}`;
+    });
+    const ctrl = document.getElementById(`ctrl-${key}`);
+    if (ctrl) ctrl.style.display = val==='yes' ? 'block' : 'none';
+    updateHazardStatus();
+  }
+
+  function updateHazardStatus() {
+    const vals = Object.values(hazardState);
+    const answered = vals.filter(v => v !== null).length;
+    const total = vals.length;
+    const yesCount = vals.filter(v => v === 'yes').length;
+    const el = document.getElementById('hazardStatus');
+    if (answered === 0) { el.innerHTML = ''; return; }
+    if (yesCount > 0) {
+      el.innerHTML = `<div class="status-banner hazard">⚠️ ${yesCount} hazard${yesCount>1?'s':''} identified — controls required</div>`;
+    } else if (answered === total) {
+      el.innerHTML = `<div class="status-banner clear">✅ All ${total} items assessed — no hazards identified</div>`;
+    } else {
+      el.innerHTML = `<div class="status-banner pending">📋 ${answered} of ${total} items assessed</div>`;
+    }
+  }
+
+  let crewCount = 0;
+  function addCrewMember() {
+    crewCount++;
+    const id = `crew-${crewCount}`;
+    crewMembers.push(id);
+    const div = document.createElement('div');
+    div.className = 'crew-row';
+    div.id = id;
+    div.innerHTML = `
+      <div class="crew-row-header">
+        <div class="crew-label">Crew Member ${crewCount}</div>
+        ${crewCount > 1 ? `<button class="remove-crew" onclick="removeCrew('${id}')">✕</button>` : ''}
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Full Name</label>
+        <input type="text" id="${id}-name" placeholder="Print full name">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Signature</label>
+        <div class="sig-canvas-wrap">
+          <canvas id="${id}-canvas" height="70"></canvas>
+          <div class="sig-placeholder" id="ph-${id}-canvas">Sign here</div>
+          <button class="clear-sig" onclick="clearCanvas('${id}-canvas','ph-${id}-canvas')">Clear</button>
+        </div>
+      </div>`;
+    document.getElementById('crewList').appendChild(div);
+    setTimeout(() => initCanvas(`${id}-canvas`), 50);
+  }
+
+  function removeCrew(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+    crewMembers = crewMembers.filter(c => c !== id);
+  }
+
+  function initCanvas(id) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = (rect.width || 300) * dpr;
+    canvas.height = 70 * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const state = {drawing: false, hasContent: false};
+    canvases[id] = {canvas, ctx, state};
+    const pos = e => {
+      const r = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return {x: t.clientX - r.left, y: t.clientY - r.top};
+    };
+    canvas.addEventListener('mousedown', e => { e.preventDefault(); state.drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); });
+    canvas.addEventListener('mousemove', e => { if(!state.drawing) return; e.preventDefault(); const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); state.hasContent=true; hidePH(id); });
+    canvas.addEventListener('mouseup', () => state.drawing=false);
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); state.drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }, {passive:false});
+    canvas.addEventListener('touchmove', e => { if(!state.drawing) return; e.preventDefault(); const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); state.hasContent=true; hidePH(id); }, {passive:false});
+    canvas.addEventListener('touchend', () => state.drawing=false);
+  }
+
+  function hidePH(id) {
+    const ph = document.getElementById(`ph-${id}`);
+    if (ph) ph.style.display = 'none';
+  }
+
+  function clearCanvas(id, phId) {
+    const c = canvases[id];
+    if (c) {
+      const dpr = window.devicePixelRatio || 1;
+      c.ctx.clearRect(0,0,c.canvas.width/dpr,c.canvas.height/dpr);
+      c.ctx.fillStyle='#ffffff';
+      c.ctx.fillRect(0,0,c.canvas.width/dpr,c.canvas.height/dpr);
+      c.state.hasContent = false;
+    }
+    const ph = document.getElementById(phId);
+    if (ph) ph.style.display = '';
+  }
+
+  function getSigImg(id) {
+    const c = canvases[id];
+    if (!c || !c.state.hasContent) return null;
+    const off = document.createElement('canvas');
+    off.width = 400; off.height = 100;
+    const octx = off.getContext('2d');
+    octx.fillStyle = '#fff';
+    octx.fillRect(0,0,400,100);
+    octx.drawImage(c.canvas,0,0,400,100);
+    return off.toDataURL('image/png');
+  }
+
+  function goTo(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(`screen${n}`).classList.add('active');
+    window.scrollTo(0,0);
+    const total = 4;
+    for (let i = 1; i <= total; i++) {
+      const pd = document.getElementById(`pd${i}`);
+      if (pd) pd.className = `progress-dot${i<n?' done':i===n?' active':''}`;
+      if (i < total) {
+        const ps = document.getElementById(`ps${i}`);
+        if (ps) ps.className = `progress-seg${i<n?' done':i===n?' active':''}`;
+      }
+    }
+    document.getElementById('stepLabel').textContent = n <= total ? `Step ${n} of ${total}` : '✓ Done';
+    if (n === 4) buildReviewSummary();
+  }
+
+  function buildReviewSummary() {
+    const v = id => document.getElementById(id)?.value || '—';
+    const yesCount = Object.values(hazardState).filter(v => v==='yes').length;
+    const noCount = Object.values(hazardState).filter(v => v==='no').length;
+    const naCount = Object.values(hazardState).filter(v => v==='na').length;
+    document.getElementById('reviewSummary').innerHTML = `
+      <div class="card">
+        <div class="card-title">Summary</div>
+        <div class="summary-stat"><span class="label">Work Type</span><span style="font-weight:700;">${selectedWorkType || '—'}</span></div>
+        <div class="summary-stat"><span class="label">Job #</span><span style="font-weight:700;">${v('jobNumber')}</span></div>
+        <div class="summary-stat"><span class="label">Client</span><span style="font-weight:700;">${v('clientName')}</span></div>
+        <div class="summary-stat"><span class="label">Site</span><span style="font-weight:700;">${v('siteAddress')}, ${v('siteCity')}</span></div>
+        <div class="summary-stat"><span class="label">Date</span><span style="font-weight:700;">${v('jobDate')}</span></div>
+        <div class="summary-stat"><span class="label">Supervisor</span><span style="font-weight:700;">${v('supervisorName')}</span></div>
+        <div class="summary-stat"><span class="label">Hazards Present</span><span class="badge-red">${yesCount}</span></div>
+        <div class="summary-stat"><span class="label">No Hazard</span><span class="badge-green">${noCount}</span></div>
+        <div class="summary-stat"><span class="label">N/A</span><span class="badge-gray">${naCount}</span></div>
+      </div>`;
+    document.getElementById('signSupervisor').value = v('supervisorName');
+    setTimeout(() => initCanvas('supervisorCanvas'), 100);
+  }
+
+  function buildEmailHTML() {
+    const v = id => document.getElementById(id)?.value || '—';
+    const refId = 'CC-' + Date.now().toString(36).toUpperCase();
+    const yesItems = Object.entries(hazardState).filter(([,val]) => val==='yes');
+    const yesCount = yesItems.length;
+    const noCount = Object.values(hazardState).filter(v => v==='no').length;
+    const naCount = Object.values(hazardState).filter(v => v==='na').length;
+    const supSig = getSigImg('supervisorCanvas');
+
+    let hazardRows = '';
+    HAZARDS.forEach((group, gi) => {
+      hazardRows += `<tr style="background:#f0f4ff;"><td colspan="3" style="padding:7px 10px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#666;">${group.group}</td></tr>`;
+      group.items.forEach((item, ii) => {
+        const key = `${gi}-${ii}`;
+        const s = hazardState[key];
+        const statusColor = s==='yes'?'#C62828':s==='no'?'#2E7D32':s==='na'?'#888':'#ccc';
+        const statusBg = s==='yes'?'#FFEBEE':s==='no'?'#E8F5E9':s==='na'?'#f5f5f5':'#fff';
+        const statusText = s==='yes'?'⚠️ YES':s==='no'?'✓ NO':s==='na'?'N/A':'—';
+        const note = controlNotes[key] || '';
+        hazardRows += `<tr style="border-bottom:1px solid #eee;">
+          <td style="padding:7px 10px;font-size:13px;">${item.icon} ${item.name}</td>
+          <td style="padding:7px 10px;"><span style="background:${statusBg};color:${statusColor};padding:2px 8px;border-radius:10px;font-weight:700;font-size:12px;white-space:nowrap;">${statusText}</span></td>
+          <td style="padding:7px 10px;font-size:12px;color:#666;font-style:italic;">${note}</td>
+        </tr>`;
+      });
+    });
+
+    let crewRows = '';
+    crewMembers.forEach(id => {
+      const name = document.getElementById(`${id}-name`)?.value || '—';
+      if (document.getElementById(id)) {
+        const sig = getSigImg(`${id}-canvas`);
+        crewRows += `<tr style="border-bottom:1px solid #eee;">
+          <td style="padding:10px;font-size:13px;">${name}</td>
+          <td style="padding:10px;">${sig ? `<img src="${sig}" style="height:44px;width:auto;border:1px solid #ddd;border-radius:4px;">` : '<span style="color:#aaa;font-size:12px;">No signature</span>'}</td>
+        </tr>`;
+      }
+    });
+
+    return `<div style="font-family:Arial,sans-serif;max-width:660px;margin:0 auto;">
+  <div style="background:#0D47A1;padding:20px 24px 16px;border-radius:8px 8px 0 0;">
+    <div style="color:#fff;font-size:18px;font-weight:900;letter-spacing:0.5px;">CAL-CAN <span style="color:#90CAF9;">PLUMBING & HEATING LTD.</span></div>
+    <div style="color:rgba(255,255,255,0.5);font-size:11px;margin-top:4px;letter-spacing:1.5px;">📋 JOB SITE HAZARD ASSESSMENT</div>
+  </div>
+  <div style="background:linear-gradient(90deg,#90CAF9,#fff);height:3px;"></div>
+  <div style="background:#fff;padding:20px 24px;border:1px solid #eee;border-top:none;">
+
+    <div style="background:${yesCount>0?'#FFEBEE':'#E8F5E9'};border-radius:8px;padding:12px 16px;margin-bottom:20px;text-align:center;">
+      <span style="color:${yesCount>0?'#C62828':'#2E7D32'};font-size:16px;font-weight:900;">${yesCount>0?`⚠️ ${yesCount} Hazard${yesCount>1?'s':''} Identified — Controls Applied`:'✅ No Hazards Identified — Site Clear'}</span>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px;">
+      <tr><td style="padding:5px 0;color:#888;width:130px;">Work Type</td><td style="font-weight:700;" colspan="3">${selectedWorkType || '—'}</td></tr>
+      <tr><td style="padding:5px 0;color:#888;">Job #</td><td style="font-weight:700;">${v('jobNumber')}</td><td style="color:#888;width:100px;">Date</td><td style="font-weight:700;">${v('jobDate')}</td></tr>
+      <tr><td style="padding:5px 0;color:#888;">Client</td><td style="font-weight:700;">${v('clientName')}</td><td style="color:#888;">Supervisor</td><td style="font-weight:700;">${v('supervisorName')}</td></tr>
+      <tr><td style="padding:5px 0;color:#888;">Site Address</td><td colspan="3" style="font-weight:700;">${v('siteAddress')}, ${v('siteCity')}</td></tr>
+      <tr><td style="padding:5px 0;color:#888;">Scope of Work</td><td colspan="3" style="font-weight:700;">${v('scopeWork')}</td></tr>
+      <tr><td style="padding:5px 0;color:#888;">Results</td><td colspan="3"><span style="color:#C62828;font-weight:700;">${yesCount} Hazard${yesCount!==1?'s':''}</span> &nbsp;|&nbsp; <span style="color:#2E7D32;font-weight:700;">${noCount} Clear</span> &nbsp;|&nbsp; <span style="color:#888;font-weight:700;">${naCount} N/A</span></td></tr>
+    </table>
+
+    <div style="font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#1565C0;padding:10px 0 8px;border-top:2px solid #1565C0;">Hazard Assessment</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #eee;">
+      <tr style="background:#E3F2FD;"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;">Hazard</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;width:80px;">Present</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;">Control Measures</th></tr>
+      ${hazardRows}
+    </table>
+
+    ${v('hazardNotes') !== '—' ? `<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#1565C0;padding:10px 0 8px;border-top:2px solid #1565C0;">Additional Notes</div><div style="font-size:13px;padding:10px;background:#fafafa;border-radius:6px;margin-bottom:16px;">${v('hazardNotes')}</div>` : ''}
+
+    <div style="font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#1565C0;padding:10px 0 8px;border-top:2px solid #1565C0;">Crew Acknowledgement</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #eee;">
+      <tr style="background:#E3F2FD;"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;">Name</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;">Signature</th></tr>
+      ${crewRows}
+    </table>
+
+    <div style="font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#1565C0;padding:10px 0 8px;border-top:2px solid #1565C0;">Supervisor Sign-Off</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;border:1px solid #eee;">
+      <tr style="background:#E3F2FD;"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;">Name</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#888;">Signature</th></tr>
+      <tr><td style="padding:10px;font-size:13px;font-weight:700;">${v('signSupervisor')}</td><td style="padding:10px;">${supSig ? `<img src="${supSig}" style="height:44px;width:auto;border:1px solid #ddd;border-radius:4px;">` : '<span style="color:#aaa;font-size:12px;">No signature captured</span>'}</td></tr>
+    </table>
+
+    <div style="background:#f8f8f8;padding:10px 14px;border-radius:6px;font-size:11px;color:#888;">
+      Ref: ${refId} &nbsp;|&nbsp; Submitted: ${new Date().toLocaleString('en-CA')} &nbsp;|&nbsp; Cal-Can Plumbing & Heating Ltd.
+    </div>
+  </div>
+</div>`;
+  }
+
+  async function submitForm() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    document.getElementById('sendingOverlay').classList.add('active');
+    const v = id => document.getElementById(id)?.value || '—';
+    const refId = 'CC-' + Date.now().toString(36).toUpperCase();
+    const yesCount = Object.values(hazardState).filter(v => v==='yes').length;
+
+    let emailOk = false;
+    try {
+      await emailjs.send('service_trpdmd3', 'template_trguxwu', {
+        to_email: 'info@cal-canplumbing.com',
+        job_number: v('jobNumber'),
+        project_name: v('clientName') + ' — ' + v('siteAddress'),
+        supervisor: v('supervisorName'),
+        date: v('jobDate'),
+        message: buildEmailHTML(),
+      });
+      emailOk = true;
+    } catch(err) {
+      console.error('EmailJS:', err);
+    }
+
+    document.getElementById('sendingOverlay').classList.remove('active');
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen5').classList.add('active');
+    document.querySelector('.brand-header').style.display = 'none';
+    window.scrollTo(0,0);
+
+    document.getElementById('doneSub').textContent = yesCount > 0
+      ? `${yesCount} hazard${yesCount>1?'s':''} identified with controls in place. Assessment emailed to the office.`
+      : 'No hazards identified. Assessment emailed to the office.';
+
+    document.getElementById('emailStatusMsg').innerHTML = emailOk
+      ? `<div class="email-status success">📧 Report emailed to info@cal-canplumbing.com</div>`
+      : `<div class="email-status error">⚠️ Email failed — use Print to save a local copy.</div>`;
+
+    document.getElementById('confirmDetails').innerHTML = `
+      <div class="summary-stat"><span class="label">Ref ID</span><span style="font-weight:700;">${refId}</span></div>
+      <div class="summary-stat"><span class="label">Job #</span><span style="font-weight:700;">${v('jobNumber')}</span></div>
+      <div class="summary-stat"><span class="label">Client</span><span style="font-weight:700;">${v('clientName')}</span></div>
+      <div class="summary-stat"><span class="label">Supervisor</span><span style="font-weight:700;">${v('supervisorName')}</span></div>
+      <div class="summary-stat"><span class="label">Hazards Found</span><span class="${yesCount>0?'badge-red':'badge-green'}">${yesCount}</span></div>
+      <div class="summary-stat"><span class="label">Submitted</span><span style="font-weight:700;">${new Date().toLocaleString('en-CA')}</span></div>`;
+  }
+
+  function startNew() { location.reload(); }
+</script>
+</body>
+</html>
